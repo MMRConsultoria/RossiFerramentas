@@ -8,7 +8,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import traceback
 
-#st.set_page_config(page_title="Painel OS", page_icon="💎", layout="wide")
+# st.set_page_config(page_title="Painel OS", page_icon="💎", layout="wide")
 
 # ========= Guarda de sessão =========
 if not st.session_state.get("acesso_liberado"):
@@ -64,11 +64,11 @@ st.markdown("""
 
 # ========= Cabeçalho e índice da coluna Controle =========
 HEADERS = [
-    "OS", "ITEM", "QUANTIDADE", "DATA", "HORA",
-    "OPERADOR", "MAQUINA", "ENTRADA/SAIDA",
+    "OS", "ITEM", "QUANTIDADE", "AFIACAO/EROSAO",  # <- nova coluna aqui
+    "DATA", "HORA", "OPERADOR", "MAQUINA", "ENTRADA/SAIDA",
     "OS- Item", "Planilha", "Controle"
 ]
-IDX_CONTROLE = 11  # 1-based
+IDX_CONTROLE = 12  # 1-based (mudou por causa da nova coluna)
 
 # ========= Helpers de erro/diagnóstico =========
 def _show_error(msg: str, exc: Exception | None = None, extra: dict | None = None):
@@ -109,10 +109,12 @@ def _open_or_prepare_ws(client):
         ws = sh.worksheet(WORKSHEET_NAME)
     except WorksheetNotFound:
         ws = sh.add_worksheet(title=WORKSHEET_NAME, rows=2000, cols=len(HEADERS))
-    # garante cabeçalho
-    values = ws.get_all_values()
-    if not values or values[0] != HEADERS:
-        ws.resize(rows=1, cols=len(HEADERS))
+    # garante cabeçalho (sem apagar linhas existentes)
+    try:
+        first_row = ws.row_values(1)
+    except Exception:
+        first_row = []
+    if first_row != HEADERS:
         ws.update("A1", [HEADERS])
     return ws
 
@@ -151,14 +153,15 @@ def salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
         data = now.strftime("%d/%m/%Y")
         hora = now.strftime("%H:%M:%S")
 
-        os_i  = registro["OS"]
-        item_ = registro["Item"]
-        mov   = registro["Movimento"]
+        os_i   = registro["OS"]
+        item_  = registro["Item"]
+        mov    = registro["Movimento"]
+        proc   = registro["Processo"]  # Afiação/Erosão
 
         chave_os_item = os_item_key(os_i, item_)
         chave_ctrl    = controle_key(os_i, item_, mov)
 
-        # Regra nova: NÃO PODE SAÍDA sem ENTRADA antes
+        # Regra: NÃO PODE SAÍDA sem ENTRADA antes
         if mov == "Saída" and not existe_entrada_para_os_item(ws, os_i, item_):
             return False, f"❌ Não é permitido registrar **Saída** sem existir uma **Entrada** prévia para **{chave_os_item}**. Registre a Entrada primeiro."
 
@@ -167,17 +170,18 @@ def salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
             return False, f"⚠️ Duplicidade: **{chave_ctrl}** já existe na coluna *Controle*."
 
         linha = [
-            os_i,                       # OS
-            item_,                      # ITEM
-            registro["Quantidade"],     # QUANTIDADE
-            data,                       # DATA
-            hora,                       # HORA
-            USUARIO_LOGADO,             # OPERADOR
-            registro["Máquina"],        # MAQUINA
-            mov,                        # ENTRADA/SAIDA
-            chave_os_item,              # OS- Item
-            WORKSHEET_NAME,             # Planilha
-            chave_ctrl,                 # Controle
+            os_i,                      # OS
+            item_,                     # ITEM
+            registro["Quantidade"],    # QUANTIDADE
+            proc,                      # AFIACAO/EROSAO  <- nova coluna
+            data,                      # DATA
+            hora,                      # HORA
+            USUARIO_LOGADO,            # OPERADOR
+            registro["Máquina"],       # MAQUINA
+            mov,                       # ENTRADA/SAIDA
+            chave_os_item,             # OS- Item
+            WORKSHEET_NAME,            # Planilha
+            chave_ctrl,                # Controle
         ]
         ws.append_row(linha, value_input_option="USER_ENTERED")
         return True, None
@@ -201,14 +205,15 @@ ALL_TABS = [
 ]
 tabs = st.tabs(ALL_TABS if ROLE == "admin" else [ALL_TABS[0]])
 
-def campos_validos(os_, maq, qtd, mov):
-    return (os_ > 0) and bool(maq.strip()) and (qtd >= 1) and (mov in ("Entrada", "Saída"))
+def campos_validos(os_, maq, qtd, mov, proc):
+    return (os_ > 0) and bool(maq.strip()) and (qtd >= 1) \
+           and (mov in ("Entrada", "Saída")) and (proc in ("Afiação", "Erosão"))
 
 # ========= Aba 1 =========
 with tabs[0]:
     with st.container(border=True):
         st.subheader("Entrada/Saída OS")
-        st.caption("Regra: **não pode Saída sem Entrada** do mesmo **OS-Item**. Duplicidade checada em **Controle** (OS-Item&Entrada|Saida).")
+        st.caption("Regra: **não pode Saída sem Entrada** do mesmo **OS-Item**. Duplicidade em **Controle** (OS-Item&Entrada|Saida).")
 
         # Linha 1
         c1, c2, c3 = st.columns(3)
@@ -219,33 +224,40 @@ with tabs[0]:
         with c3:
             maq  = st.text_input("Máquina", placeholder="Ex.: 6666666", key="maq")
 
-        # Linha 2
-        qcol, mcol = st.columns([0.8, 1.2])
+        # Linha 2 (Quantidade | Processo | Movimento)
+        qcol, pcol, mcol = st.columns([0.8, 1.2, 1.2])
         with qcol:
             qtd  = st.number_input("Quantidade", min_value=1, step=1, format="%d", key="qtd")
+        with pcol:
+            # Processo: Afiação / Erosão (sem seleção inicial em versões recentes)
+            try:
+                proc = st.radio("Processo", ["Afiação", "Erosão"], index=None, horizontal=True, key="proc")
+            except TypeError:
+                optp = st.radio("Processo", ["Selecione...", "Afiação", "Erosão"], index=0, horizontal=True, key="proc")
+                proc = None if optp == "Selecione..." else optp
         with mcol:
             try:
                 mov = st.radio("Movimento", ["Entrada", "Saída"], index=None, horizontal=True, key="mov")
             except TypeError:
-                opt = st.radio("Movimento", ["Selecione...", "Entrada", "Saída"], index=0, horizontal=True, key="mov")
-                mov = None if opt == "Selecione..." else opt
+                optm = st.radio("Movimento", ["Selecione...", "Entrada", "Saída"], index=0, horizontal=True, key="mov")
+                mov = None if optm == "Selecione..." else optm
 
         col_a, col_b = st.columns([1, 1])
         salvar = col_a.button(
             "💾 Salvar",
             use_container_width=True,
-            disabled=not campos_validos(os_, maq, qtd, mov)
+            disabled=not campos_validos(os_, maq, qtd, mov, proc)
         )
         limpar = col_b.button("🧹 Limpar", use_container_width=True)
 
         if limpar:
-            for k in ("os","item","maq","qtd","mov"):
+            for k in ("os","item","maq","qtd","mov","proc"):
                 st.session_state.pop(k, None)
             st.rerun()
 
         if salvar:
-            if not campos_validos(os_, maq, qtd, mov):
-                st.error("Preencha todos os campos corretamente e escolha o movimento.")
+            if not campos_validos(os_, maq, qtd, mov, proc):
+                st.error("Preencha todos os campos e selecione **Processo** e **Movimento**.")
             else:
                 registro = {
                     "OS": int(os_),
@@ -253,22 +265,12 @@ with tabs[0]:
                     "Quantidade": int(qtd),
                     "Máquina": maq.strip(),
                     "Movimento": mov,
+                    "Processo": proc,  # novo campo
                 }
 
                 ok, err = salvar_no_sheets(registro)
                 if ok:
-                    chave_ctrl = controle_key(registro["OS"], registro["Item"], registro["Movimento"])
-                    st.success(f"✅ Registro salvo. ")
-                    #st.markdown('<div class="box">', unsafe_allow_html=True)
-                    #st.json({
-                    #    **registro,
-                    #    "DATA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y"),
-                    #    "HORA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%H:%M:%S"),
-                    #    "OPERADOR": USUARIO_LOGADO,
-                    #    "OS- Item": os_item_key(registro["OS"], registro["Item"]),
-                    #    "Controle": chave_ctrl,
-                    #})
-                    #st.markdown('</div>', unsafe_allow_html=True)
+                    st.success("✅ Registro salvo.")
                 else:
                     st.error(err)
 
