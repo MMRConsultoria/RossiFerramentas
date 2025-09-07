@@ -267,8 +267,8 @@ with tabs[0]:
                     #    "OPERADOR": USUARIO_LOGADO,
                     #    "OS- Item": os_item_key(registro["OS"], registro["Item"]),
                     #    "Controle": chave_ctrl,
-                    })
-                    st.markdown('</div>', unsafe_allow_html=True)
+                    #})
+                    #st.markdown('</div>', unsafe_allow_html=True)
                 else:
                     st.error(err)
 
