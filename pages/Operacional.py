@@ -66,7 +66,7 @@ st.markdown("""
 HEADERS = [
     "OS", "ITEM", "QUANTIDADE", "DATA", "HORA",
     "OPERADOR", "MAQUINA", "ENTRADA/SAIDA",
-    "OS- Item", "Planilha", "Controle"              # <- alterado aqui
+    "OS- Item", "Planilha", "Controle"
 ]
 IDX_CONTROLE = 11  # 1-based
 
@@ -125,14 +125,23 @@ def controle_key(os_: int, item_: int, mov: str) -> str:
     mov_label = "Entrada" if mov == "Entrada" else "Saida"
     return f"{os_item_key(os_, item_)}&{mov_label}"
 
-def ja_existe_controle(ws, chave: str) -> bool:
+# ---- Consultas de existência na coluna Controle ----
+def col_controle(ws) -> list[str]:
     try:
         col = ws.col_values(IDX_CONTROLE)
-        return chave in set([c for c in col[1:] if c])
+        return [c for c in col[1:] if c]  # sem cabeçalho, sem vazios
     except Exception:
-        # em caso de erro de leitura, não travar; considerar não-duplicado
-        return False
+        return []
 
+def ja_existe_controle(ws, chave: str) -> bool:
+    return chave in set(col_controle(ws))
+
+def existe_entrada_para_os_item(ws, os_: int, item_: int) -> bool:
+    """Verifica se já existe 'OS-Item&Entrada' para permitir Saída."""
+    chave_entrada = f"{os_item_key(os_, item_)}&Entrada"
+    return chave_entrada in set(col_controle(ws))
+
+# ========= Salvamento com as regras =========
 def salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
     try:
         client, sa_email = _gspread_client()
@@ -149,6 +158,11 @@ def salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
         chave_os_item = os_item_key(os_i, item_)
         chave_ctrl    = controle_key(os_i, item_, mov)
 
+        # Regra nova: NÃO PODE SAÍDA sem ENTRADA antes
+        if mov == "Saída" and not existe_entrada_para_os_item(ws, os_i, item_):
+            return False, f"❌ Não é permitido registrar **Saída** sem existir uma **Entrada** prévia para **{chave_os_item}**. Registre a Entrada primeiro."
+
+        # Duplicidade: não pode repetir o mesmo Controle
         if ja_existe_controle(ws, chave_ctrl):
             return False, f"⚠️ Duplicidade: **{chave_ctrl}** já existe na coluna *Controle*."
 
@@ -194,7 +208,7 @@ def campos_validos(os_, maq, qtd, mov):
 with tabs[0]:
     with st.container(border=True):
         st.subheader("💎 Entrada/Saída OS")
-        st.caption("Preencha e **Salvar**. Duplicidade checada em **Controle** (OS-Item&Entrada|Saida).")
+        st.caption("Regra: **não pode Saída sem Entrada** do mesmo **OS-Item**. Duplicidade checada em **Controle** (OS-Item&Entrada|Saida).")
 
         # Linha 1
         c1, c2, c3 = st.columns(3)
