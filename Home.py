@@ -80,5 +80,5 @@ if logo_cliente:
 st.image(logo_cliente or "https://raw.githubusercontent.com/MMRConsultoria/MMRBackup/main/logo-mmr.png", width=150)
 
 # ✅ Mensagem
-st.markdown("## Bem-vindo ao Portal de Relatórios")
+st.markdown("## Bem-vindo ao Portal")
 st.success(f"✅ Acesso liberado para o código {codigo_empresa}!")
