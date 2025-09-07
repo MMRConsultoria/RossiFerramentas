@@ -104,8 +104,8 @@ USUARIOS = [
  #       aba = planilha.sheet1
  #       nova_linha = [nome_usuario, data, hora]
  #       aba.append_row(nova_linha)
- #   except Exception as e:
- #       st.error(f"Erro ao registrar acesso: {e}")
+    except Exception as e:
+        st.error(f"Erro ao registrar acesso: {e}")
 
 # ✅ Redireciona se já estiver logado
 if st.session_state.get("acesso_liberado"):
