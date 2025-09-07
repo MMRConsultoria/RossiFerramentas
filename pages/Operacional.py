@@ -22,7 +22,7 @@ st.markdown("""
 .h2{ font-weight:800; color:#0f172a; margin:0 0 6px; }
 .caption{ color:#6b7280; margin-bottom:14px; }
 
-.row{ display:grid; grid-template-columns: 1.3fr .7fr 1fr; gap:12px; }
+.row{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; }
 .row2{ display:grid; grid-template-columns: 1fr; gap:12px; }
 
 .box{ padding:12px; border:1px dashed #d1d5db; border-radius:12px; background:#f9fafb; }
@@ -45,12 +45,12 @@ tabs = st.tabs([
 with tabs[0]:
     st.markdown('<div class="wrapper"><div class="card">', unsafe_allow_html=True)
     st.markdown('<div class="h2">🧰 Entrada/Saída OS</div>', unsafe_allow_html=True)
-    #st.markdown('<div class="caption">Preencha e selecione o tipo do movimento.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="caption">Preencha os dados da OS.</div>', unsafe_allow_html=True)
 
     with st.form("form_os"):
         # Linha 1: OS | Item | Máquina
         st.markdown('<div class="row">', unsafe_allow_html=True)
-        os_  = st.text_input("OS", placeholder="Ex.: 9532")
+        os_  = st.number_input("🔑 OS", min_value=0, step=1, format="%d")
         item = st.number_input("Item", min_value=0, step=1, format="%d")
         maq  = st.text_input("Máquina", placeholder="Ex.: 6666666")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -60,10 +60,10 @@ with tabs[0]:
         qtd  = st.number_input("Quantidade", min_value=1, step=1, format="%d")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Linha 3: Movimento — uso de RADIO para escolha única
+        # Movimento (radio obrigatório)
         mov = st.radio(
             "Movimento",
-            options=["Entrada", "Saída"],
+            options=["Selecione...", "Entrada", "Saída"],
             index=0,
             horizontal=True,
         )
@@ -80,8 +80,8 @@ with tabs[0]:
 
     if salvar:
         erros = []
-        if not os_ or not os_.strip():
-            erros.append("Informe a **OS**.")
+        if os_ == 0:
+            erros.append("Informe a **OS** (valor maior que zero).")
         if not maq or not maq.strip():
             erros.append("Informe a **Máquina**.")
         if mov == "Selecione...":
@@ -91,13 +91,13 @@ with tabs[0]:
             for e in erros: st.error(e)
         else:
             registro = {
-                "OS": os_.strip(),
+                "OS": int(os_),
                 "Item": int(item),
                 "Quantidade": int(qtd),
                 "Máquina": maq.strip(),
                 "Movimento": mov,
             }
-            st.success("✅ Registro salvo localmente (UI ok – integração com Google Sheets vem depois).")
+            st.success("✅ Registro salvo localmente (UI pronta — Sheets vem depois).")
             st.markdown('<div class="box">', unsafe_allow_html=True)
             st.json(registro)
             st.markdown('</div>', unsafe_allow_html=True)
