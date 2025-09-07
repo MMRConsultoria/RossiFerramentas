@@ -64,11 +64,11 @@ st.markdown("""
 
 # ========= Cabeçalho e índice da coluna Controle =========
 HEADERS = [
-    "OS", "ITEM", "QUANTIDADE", "AFIACAO/EROSAO",  # <- nova coluna aqui
+    "OS", "ITEM", "QUANTIDADE", "AFIACAO/EROSAO",
     "DATA", "HORA", "OPERADOR", "MAQUINA", "ENTRADA/SAIDA",
-    "OS- Item", "Planilha", "Controle"
+    "OS- Item", "Afiação/Erosão", "Controle"
 ]
-IDX_CONTROLE = 12  # 1-based (mudou por causa da nova coluna)
+IDX_CONTROLE = 12  # 1-based (última coluna)
 
 # ========= Helpers de erro/diagnóstico =========
 def _show_error(msg: str, exc: Exception | None = None, extra: dict | None = None):
@@ -170,18 +170,18 @@ def salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
             return False, f"⚠️ Duplicidade: **{chave_ctrl}** já existe na coluna *Controle*."
 
         linha = [
-            os_i,                      # OS
-            item_,                     # ITEM
-            registro["Quantidade"],    # QUANTIDADE
-            proc,                      # AFIACAO/EROSAO  <- nova coluna
-            data,                      # DATA
-            hora,                      # HORA
-            USUARIO_LOGADO,            # OPERADOR
-            registro["Máquina"],       # MAQUINA
-            mov,                       # ENTRADA/SAIDA
-            chave_os_item,             # OS- Item
-            WORKSHEET_NAME,            # Planilha
-            chave_ctrl,                # Controle
+            os_i,                       # OS
+            item_,                      # ITEM
+            registro["Quantidade"],     # QUANTIDADE
+            proc,                       # AFIACAO/EROSAO
+            data,                       # DATA
+            hora,                       # HORA
+            USUARIO_LOGADO,             # OPERADOR
+            registro["Máquina"],        # MAQUINA
+            mov,                        # ENTRADA/SAIDA
+            chave_os_item,              # OS- Item
+            proc,                       # Afiação/Erosão (mesmo valor do processo)
+            chave_ctrl,                 # Controle
         ]
         ws.append_row(linha, value_input_option="USER_ENTERED")
         return True, None
@@ -229,7 +229,6 @@ with tabs[0]:
         with qcol:
             qtd  = st.number_input("Quantidade", min_value=1, step=1, format="%d", key="qtd")
         with pcol:
-            # Processo: Afiação / Erosão (sem seleção inicial em versões recentes)
             try:
                 proc = st.radio("Processo", ["Afiação", "Erosão"], index=None, horizontal=True, key="proc")
             except TypeError:
@@ -265,7 +264,7 @@ with tabs[0]:
                     "Quantidade": int(qtd),
                     "Máquina": maq.strip(),
                     "Movimento": mov,
-                    "Processo": proc,  # novo campo
+                    "Processo": proc,
                 }
 
                 ok, err = salvar_no_sheets(registro)
