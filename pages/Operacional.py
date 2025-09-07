@@ -64,7 +64,7 @@ st.markdown("""
 
 # ========= Cabeçalho e índice da coluna Controle =========
 HEADERS = [
-    "OS", "ITEM", "QUANTIDADE", "AFIACAO/EROSAO",
+    "OS", "ITEM", "QUANTIDADE",
     "DATA", "HORA", "OPERADOR", "MAQUINA", "ENTRADA/SAIDA",
     "OS- Item", "Afiação/Erosão", "Controle"
 ]
@@ -172,7 +172,6 @@ def salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
             os_i,                       # OS
             item_,                      # ITEM
             registro["Quantidade"],     # QUANTIDADE
-            proc,                       # AFIACAO/EROSAO
             data,                       # DATA
             hora,                       # HORA
             USUARIO_LOGADO,             # OPERADOR
