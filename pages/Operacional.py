@@ -32,6 +32,26 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+st.markdown("""
+<script>
+document.addEventListener('keydown', function(e) {
+  if (e.key === "Enter") {
+    const active = document.activeElement;
+    // pega todos os inputs do formulário
+    const inputs = Array.from(document.querySelectorAll(
+      'input, select, textarea'
+    )).filter(el => el.tabIndex >= 0);
+
+    const idx = inputs.indexOf(active);
+    if (idx > -1) {
+      e.preventDefault(); // evita submit
+      let next = inputs[idx + 1] || inputs[0];
+      next.focus();
+    }
+  }
+});
+</script>
+""", unsafe_allow_html=True)
 
 # ====== Abas ======
 tabs = st.tabs([
