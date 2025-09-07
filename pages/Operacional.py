@@ -45,7 +45,7 @@ tabs = st.tabs([
 with tabs[0]:
     st.markdown('<div class="wrapper"><div class="card">', unsafe_allow_html=True)
     st.markdown('<div class="h2">🧰 Entrada/Saída OS</div>', unsafe_allow_html=True)
-    st.markdown('<div class="caption">Preencha e selecione o tipo do movimento.</div>', unsafe_allow_html=True)
+    #st.markdown('<div class="caption">Preencha e selecione o tipo do movimento.</div>', unsafe_allow_html=True)
 
     with st.form("form_os"):
         # Linha 1: OS | Item | Máquina
