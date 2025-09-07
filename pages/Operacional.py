@@ -19,9 +19,7 @@ st.markdown("""
 }
 .stTabs [aria-selected="true"]{ background:#2563eb; color:#fff!important; border-color:#2563eb; }
 .stTabs [role="tab"]:hover{ background:#e0e7ff; color:#1e3a8a; }
-
-/* Evita bloco vazio logo abaixo das abas */
-.stTabs [role="tablist"] + div:empty { display:none !important; }
+.stTabs [role="tablist"] + div:empty { display:none !important; } /* evita "pílula" fantasma */
 
 .box{ padding:12px; border:1px dashed #d1d5db; border-radius:12px; background:#f9fafb; }
 .badge{
@@ -71,75 +69,97 @@ ALL_TABS = [
 ]
 tabs = st.tabs(ALL_TABS if ROLE == "admin" else [ALL_TABS[0]])
 
+# ========= Helpers =========
+def campos_validos():
+    os_ok   = st.session_state.get("os", 0) > 0
+    maq_ok  = bool((st.session_state.get("maq") or "").strip())
+    qtd_ok  = st.session_state.get("qtd", 0) >= 1
+    mov_ok  = st.session_state.get("mov") in ("Entrada", "Saída")
+    return os_ok and maq_ok and qtd_ok and mov_ok
+
+def assinatura_atual():
+    return (
+        st.session_state.get("os"),
+        st.session_state.get("item"),
+        st.session_state.get("qtd"),
+        (st.session_state.get("maq") or "").strip(),
+        st.session_state.get("mov"),
+    )
+
+def montar_registro():
+    return {
+        "OS": int(st.session_state["os"]),
+        "Item": int(st.session_state["item"]),
+        "Quantidade": int(st.session_state["qtd"]),
+        "Máquina": st.session_state["maq"].strip(),
+        "Movimento": st.session_state["mov"],
+    }
+
+def processar_salvar(auto=False):
+    registro = montar_registro()
+    st.session_state["last_saved_sig"] = assinatura_atual()
+    msg = "✅ Registro **auto-salvo**." if auto else "✅ Registro salvo."
+    st.success(msg)
+    st.markdown('<div class="box">', unsafe_allow_html=True)
+    st.json(registro)
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="badge">Movimento: <b>{registro["Movimento"]}</b></div>', unsafe_allow_html=True)
+
 # ========= Aba 1: Entrada/Saída OS =========
 with tabs[0]:
     with st.container(border=True):
         st.subheader("💼 Entrada/Saída OS")
-        st.caption("Preencha os dados da OS e selecione o tipo do movimento.")
+        st.caption("Preencha os dados. O sistema pode **salvar automaticamente** ao concluir.")
 
-        with st.form("form_os"):
-            # Linha 1: OS | Item | Máquina
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                os_  = st.number_input("🔑 OS", min_value=0, step=1, format="%d", key="os")
-            with c2:
-                item = st.number_input("Item", min_value=0, step=1, format="%d", key="item")
-            with c3:
-                maq  = st.text_input("Máquina", placeholder="Ex.: 6666666", key="maq")
+        # Toggle de auto-salvar
+        st.checkbox("Salvar automaticamente ao concluir", value=True, key="auto_save")
 
-            # Linha 2: Quantidade (esq) + Movimento (dir, sem seleção inicial)
-            qcol, mcol = st.columns([0.8, 1.2])
-            with qcol:
-                qtd  = st.number_input("Quantidade", min_value=1, step=1, format="%d", key="qtd")
-            with mcol:
-                mov = st.radio(
-                    "Movimento",
-                    options=["Entrada", "Saída"],
-                    index=None,                 # <- nenhuma opção marcada
-                    horizontal=True,
-                    key="mov",
-                )
+        # Linha 1: OS | Item | Máquina
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.number_input("🔑 OS", min_value=0, step=1, format="%d", key="os")
+        with c2:
+            st.number_input("Item", min_value=0, step=1, format="%d", key="item")
+        with c3:
+            st.text_input("Máquina", placeholder="Ex.: 6666666", key="maq")
 
-            # Botões
-            col_a, col_b = st.columns([1, 1])
-            salvar = col_a.form_submit_button(
-                "💾 Salvar",
-                use_container_width=True,
-                disabled=(mov is None or os_ == 0 or not (maq and maq.strip()))
-            )
-            limpar = col_b.form_submit_button("🧹 Limpar", use_container_width=True)
+        # Linha 2: Quantidade (esq) + Movimento (dir, sem seleção inicial)
+        qcol, mcol = st.columns([0.8, 1.2])
+        with qcol:
+            st.number_input("Quantidade", min_value=1, step=1, format="%d", key="qtd")
+        with mcol:
+            # tenta criar radio sem seleção; se a sua versão não aceitar index=None,
+            # use fallback com placeholder (tratado no except)
+            try:
+                st.radio("Movimento", ["Entrada", "Saída"], index=None, horizontal=True, key="mov")
+            except TypeError:
+                escolha = st.radio("Movimento", ["Selecione...", "Entrada", "Saída"], index=0, horizontal=True, key="mov")
+                if escolha == "Selecione...":
+                    st.session_state["mov"] = None
 
-        # --- ações fora do form ---
+        # Botões
+        col_a, col_b = st.columns([1, 1])
+        salvar = col_a.button(
+            "💾 Salvar",
+            use_container_width=True,
+            disabled=not campos_validos()
+        )
+        limpar = col_b.button("🧹 Limpar", use_container_width=True)
+
+        # --- Ações ---
         if limpar:
-            for k in ("os", "item", "maq", "qtd", "mov"):
+            for k in ("os", "item", "maq", "qtd", "mov", "last_saved_sig"):
                 st.session_state.pop(k, None)
             st.rerun()
 
-        if salvar:
-            erros = []
-            if os_ == 0:
-                erros.append("Informe a **OS** (valor maior que zero).")
-            if not (maq and maq.strip()):
-                erros.append("Informe a **Máquina**.")
-            if mov is None:
-                erros.append("Selecione **Entrada** ou **Saída**.")
+        if salvar and campos_validos():
+            processar_salvar(auto=False)
 
-            if erros:
-                for e in erros:
-                    st.error(e)
-            else:
-                registro = {
-                    "OS": int(os_),
-                    "Item": int(item),
-                    "Quantidade": int(qtd),
-                    "Máquina": maq.strip(),
-                    "Movimento": mov,
-                }
-                st.success("✅ Registro salvo localmente.")
-                st.markdown('<div class="box">', unsafe_allow_html=True)
-                st.json(registro)
-                st.markdown('</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="badge">Movimento: <b>{mov}</b></div>', unsafe_allow_html=True)
+        # --- Auto-salvar quando todos os campos ficarem válidos ---
+        if st.session_state.get("auto_save", True) and campos_validos():
+            sig = assinatura_atual()
+            if st.session_state.get("last_saved_sig") != sig:
+                processar_salvar(auto=True)
 
 # ========= Abas extras (somente admin) =========
 if ROLE == "admin" and len(tabs) > 1:
