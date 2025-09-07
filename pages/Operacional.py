@@ -63,7 +63,7 @@ with tabs[0]:
         # Linha 3: Movimento — uso de RADIO para escolha única
         mov = st.radio(
             "Movimento",
-            options=["Selecione...", "Entrada", "Saída"],
+            options=["Entrada", "Saída"],
             index=0,
             horizontal=True,
         )
