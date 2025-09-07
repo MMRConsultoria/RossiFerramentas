@@ -78,8 +78,8 @@ if not codigo_param or not empresa_param:
 
 # ✅ Lista de usuários
 USUARIOS = [
-    {"codigo": "3377", "Usuario": Fabio Roberto", "senha": "1825"},
-    {"codigo": "3377", "Usuario": "Mario Sergio", "senha": "1655"}
+    {"codigo": "3377", "email": "marice@gmail.com", "senha": "1825"},
+    {"codigo": "3377", "email": "maricelisrossi@gmail.com", "senha": "1825"}
 ]
 
 # ========================
