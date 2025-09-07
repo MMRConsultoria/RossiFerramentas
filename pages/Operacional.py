@@ -96,12 +96,12 @@ tabs = st.tabs(tab_labels)
 with tabs[0]:
     st.markdown('<div class="wrapper"><div class="card">', unsafe_allow_html=True)
     st.markdown('<div class="h2">🧰 Entrada/Saída OS</div>', unsafe_allow_html=True)
-    st.markdown('<div class="caption">Preencha os dados da OS e selecione o tipo do movimento.</div>', unsafe_allow_html=True)
+    #st.markdown('<div class="caption">Preencha os dados da OS e selecione o tipo do movimento.</div>', unsafe_allow_html=True)
 
     with st.form("form_os"):
         # Linha 1: OS | Item | Máquina
         st.markdown('<div class="row">', unsafe_allow_html=True)
-        os_  = st.number_input("🔑 OS", min_value=0, step=1, format="%d", key="os")
+        os_  = st.number_input("OS", min_value=0, step=1, format="%d", key="os")
         item = st.number_input("Item", min_value=0, step=1, format="%d", key="item")
         maq  = st.text_input("Máquina", placeholder="Ex.: 6666666", key="maq")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -114,7 +114,7 @@ with tabs[0]:
         # Movimento (radio obrigatório)
         mov = st.radio(
             "Movimento",
-            options=["Selecione...", "Entrada", "Saída"],
+            options=["Entrada", "Saída"],
             index=0, horizontal=True, key="mov"
         )
 
