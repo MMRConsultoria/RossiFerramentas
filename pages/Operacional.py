@@ -162,7 +162,7 @@ def salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
 
         # Regra: NÃO PODE SAÍDA sem ENTRADA (mesmo OS-Item e mesmo Processo)
         if mov == "Saída" and not existe_entrada_para_os_item_proc(ws, os_i, item_, proc):
-            return False, f"❌ Não é permitido registrar **Saída** sem existir **Entrada** prévia para **{chave_os_item} ({proc})**."
+            return False, f"❌ Não é permitido registrar **Saída** sem existir **Entrada** prévia para"
 
         # Duplicidade: não pode repetir o mesmo Controle
         if ja_existe_controle(ws, chave_ctrl):
