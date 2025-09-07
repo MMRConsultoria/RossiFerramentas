@@ -258,15 +258,15 @@ with tabs[0]:
                 ok, err = salvar_no_sheets(registro)
                 if ok:
                     chave_ctrl = controle_key(registro["OS"], registro["Item"], registro["Movimento"])
-                    st.success(f"✅ Registro salvo. Controle: **{chave_ctrl}**")
-                    st.markdown('<div class="box">', unsafe_allow_html=True)
-                    st.json({
-                        **registro,
-                        "DATA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y"),
-                        "HORA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%H:%M:%S"),
-                        "OPERADOR": USUARIO_LOGADO,
-                        "OS- Item": os_item_key(registro["OS"], registro["Item"]),
-                        "Controle": chave_ctrl,
+                    st.success(f"✅ Registro salvo. ")
+                    #st.markdown('<div class="box">', unsafe_allow_html=True)
+                    #st.json({
+                    #    **registro,
+                    #    "DATA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y"),
+                    #    "HORA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%H:%M:%S"),
+                    #    "OPERADOR": USUARIO_LOGADO,
+                    #    "OS- Item": os_item_key(registro["OS"], registro["Item"]),
+                    #    "Controle": chave_ctrl,
                     })
                     st.markdown('</div>', unsafe_allow_html=True)
                 else:
