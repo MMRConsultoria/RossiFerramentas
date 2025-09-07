@@ -80,6 +80,7 @@ if not codigo_param or not empresa_param:
 USUARIOS = [
     {"codigo": "3377", "Usuario": "João Fabio", "senha": "1825$"},
     {"codigo": "3377", "Usuario": "Mario Ricardo", "senha": "1838*"}
+    {"codigo": "3377", "Usuario": "maricelisrossi@gmail.com", "senha": "1825*"}
 ]
 
 # ========================
