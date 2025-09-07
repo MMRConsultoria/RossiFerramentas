@@ -59,7 +59,7 @@ codigo_empresa = st.session_state.get("empresa")
 # ✅ Logos por código
 LOGOS_CLIENTES = {
    
-    "3377": "https://raw.githubusercontent.com/MMRConsultoria/MMRBackup/main/rossi_ferramentas_logo.png",
+    "3377": "https://raw.githubusercontent.com/MMRConsultoria/MMRBackup/main/rossi_ferramentas_logo.png"
     
 
 # ✅ Logo na sidebar
