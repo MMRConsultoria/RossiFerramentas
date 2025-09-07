@@ -4,7 +4,6 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
 from datetime import datetime
-import streamlit as st
 
 st.set_page_config(page_title="Login | MMR Consultoria")
 
@@ -49,94 +48,47 @@ if not codigo_param or not empresa_param:
     """, unsafe_allow_html=True)
     st.stop()
 
-## 🔍 Descobrir IP externo do usuário
-#@st.cache_data(ttl=600)
-#def get_ip():
-#    try:
-#        return requests.get("https://api.ipify.org").text
-#    except:
-#        return "0.0.0.0"
-
-# Lista de IPs autorizados
-#IPS_AUTORIZADOS = ["35.203.187.165", "201.10.22.33"]  # atualize conforme necessário
-
-# 👉 Captura o IP corretamente
-#ip_usuario = get_ip()
-
-# ❌ Bloqueia se IP não estiver na lista
-#if ip_usuario not in IPS_AUTORIZADOS:
-#    st.markdown("""
-#        <style>
-#        #MainMenu, header, footer, .stSidebar { display: none; }
-#        </style>
-#        ## 🔐 IP não autorizado
-#        Seu IP detectado: """ + ip_usuario + """
-#
-#        Copie este IP e envie para a equipe da MMR Consultoria para liberar o acesso.
-#    """, unsafe_allow_html=True)
-#    st.stop()
-
-# ✅ Lista de usuários
+# ========= Usuários (exemplo) =========
+# Adicione 'role': 'admin' ou 'basic'
 USUARIOS = [
-    {"codigo": "3377", "Usuario": "João Fabio", "senha": "1825$"},
-    {"codigo": "3377", "Usuario": "Mario Ricardo", "senha": "1838*"},
-    {"codigo": "3377", "Usuario": "maricelisrossi@gmail.com", "senha": "1825"}
+    {"codigo": "3377", "Usuario": "João Fabio",             "senha": "1825$", "role": "basic"},
+    {"codigo": "3377", "Usuario": "Mario Ricardo",          "senha": "1838*", "role": "basic"},
+    {"codigo": "3377", "Usuario": "maricelisrossi@gmail.com","senha": "1825", "role": "admin"},
 ]
 
-# ========================
-# 🔐 Autenticação Google Sheets
-# ========================
-#scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-#credentials_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT_ACESSOS"])
-#credentials = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
-#gc = gspread.authorize(credentials)
-
-#from datetime import datetime
-#import pytz
-
-#def registrar_acesso(nome_usuario):
- #   try:
- #       fuso_brasilia = pytz.timezone("America/Sao_Paulo")
- #       agora = datetime.now(fuso_brasilia)
- #       data = agora.strftime("%d/%m/%Y")
- #       hora = agora.strftime("%H:%M:%S")
-
- #       planilha = gc.open_by_key("1SZ5R6hcBE6o_qWs0_wx6IGKfIGltxpb9RWiGyF4L5uE")
- #       aba = planilha.sheet1
- #       nova_linha = [nome_usuario, data, hora]
- #       aba.append_row(nova_linha)
-    #except Exception as e:
-    #    st.error(f"Erro ao registrar acesso: {e}")
-
-# ✅ Redireciona se já estiver logado
+# ✅ Se já estiver logado, redireciona
 if st.session_state.get("acesso_liberado"):
-    st.switch_page("Home.py")
-
-# ✅ Exibe o IP do usuário discretamente
-#st.markdown(f"<p style='font-size:12px; color:#aaa;'>🛠️ Seu IP: <code>{ip_usuario}</code></p>", unsafe_allow_html=True)
+    st.switch_page("pages/Operacional.py")
 
 # 🧾 Tela de login
 st.title("🔐 Acesso Restrito")
-st.markdown("Informe o código da empresa, Usuario e senha.")
+st.markdown("Informe o código da empresa, Usuário e senha.")
 
 codigo = st.text_input("Código da Empresa:")
-Usuario = st.text_input("Usuario:")
+Usuario = st.text_input("Usuário:")
 senha = st.text_input("Senha:", type="password")
 
+def autenticar(codigo: str, usuario: str, senha: str):
+    for u in USUARIOS:
+        if u["codigo"] == codigo and u["Usuario"] == usuario and u["senha"] == senha:
+            return u
+    return None
+
 # ✅ Botão de login
-if st.button("Entrar"):
-    usuario_encontrado = next(
-        (u for u in USUARIOS if u["codigo"] == codigo and u["Usuario"] == Usuario and u["senha"] == senha),
-        None
-    )
+if st.button("Entrar", type="primary"):
+    usuario_encontrado = autenticar(codigo, Usuario, senha)
 
     if usuario_encontrado:
         st.session_state["acesso_liberado"] = True
         st.session_state["empresa"] = codigo
         st.session_state["usuario_logado"] = Usuario
-        #registrar_acesso(Usuario)
-        st.switch_page("Home.py")
+        st.session_state["role"] = usuario_encontrado.get("role", "basic")
 
+        # Permissões centralizadas: admin vê tudo, demais só a aba Entrada/Saída OS
+        st.session_state["tabs_permitidas"] = (
+            ["all"] if st.session_state["role"] == "admin" else ["entrada_saida_os"]
+        )
+
+        st.switch_page("pages/Operacional.py")
     else:
-        st.error("❌ Código, Usuario ou senha incorretos.")
-
+        st.error("❌ Código, Usuário ou senha incorretos.")
