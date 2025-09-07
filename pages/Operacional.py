@@ -2,6 +2,43 @@
 import streamlit as st
 
 st.set_page_config(page_title="Entrada/Saída OS", page_icon="🧰", layout="centered")
+import streamlit as st
+
+st.set_page_config(page_title="Painel OS", page_icon="🧰", layout="wide")
+
+# ====== CSS customizado para abas estilo "pill" ======
+st.markdown("""
+<style>
+/* container das abas */
+.stTabs [role="tablist"] {
+    gap: 10px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* cada aba */
+.stTabs [role="tab"] {
+    background: #f3f4f6;
+    padding: 8px 20px;
+    border-radius: 6px 6px 0 0;
+    font-weight: 600;
+    color: #374151;
+    border: 1px solid transparent;
+}
+
+/* aba ativa */
+.stTabs [aria-selected="true"] {
+    background: #2563eb;  /* azul */
+    color: #fff !important;
+    border-color: #2563eb;
+}
+
+/* hover */
+.stTabs [role="tab"]:hover {
+    background: #e0e7ff;
+    color: #1e3a8a;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ====== Abas ======
 abas = st.tabs([
