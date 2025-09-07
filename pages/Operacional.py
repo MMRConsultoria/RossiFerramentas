@@ -8,7 +8,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import traceback
 
-st.set_page_config(page_title="Painel OS", page_icon="🧰", layout="wide")
+st.set_page_config(page_title="Painel OS", page_icon="💎", layout="wide")
 
 # ========= Guarda de sessão =========
 if not st.session_state.get("acesso_liberado"):
@@ -66,7 +66,7 @@ st.markdown("""
 HEADERS = [
     "OS", "ITEM", "QUANTIDADE", "DATA", "HORA",
     "OPERADOR", "MAQUINA", "ENTRADA/SAIDA",
-    "Verificação", "Planilha", "Controle"
+    "OS- Item", "Planilha", "Controle"              # <- alterado aqui
 ]
 IDX_CONTROLE = 11  # 1-based
 
@@ -87,15 +87,14 @@ def _show_error(msg: str, exc: Exception | None = None, extra: dict | None = Non
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
 def _get_sa_dict():
-    # aceita GOOGLE_SERVICE_ACCOUNT ou GOOGLE_SERVICE_ACCOUNT_ACESSOS
-    sa_str = st.secrets.get("GOOGLE_SERVICE_ACCOUNT") or st.secrets.get("GOOGLE_SERVICE_ACCOUNT_ACESSOS")
+    sa_str = st.secrets.get("GOOGLE_SERVICE_ACCOUNT", None)
     if not sa_str:
-        _show_error("Secret com credencial não encontrado (GOOGLE_SERVICE_ACCOUNT ou GOOGLE_SERVICE_ACCOUNT_ACESSOS)")
+        _show_error("Secret GOOGLE_SERVICE_ACCOUNT não encontrado.")
         st.stop()
     try:
         return json.loads(sa_str)
     except Exception as e:
-        _show_error("Credencial em formato inválido (não é STRING JSON escapada)", e)
+        _show_error("GOOGLE_SERVICE_ACCOUNT inválido (não é STRING JSON escapada)", e)
         st.stop()
 
 def _gspread_client():
@@ -117,19 +116,24 @@ def _open_or_prepare_ws(client):
         ws.update("A1", [HEADERS])
     return ws
 
-def _controle_key(os_: int, item_: int, mov: str) -> str:
-    mov_key = "entrada" if mov == "Entrada" else "saida"
-    return f"{os_}&{item_}%{mov_key}"
+# ========= Chaves (OS-Item e Controle) =========
+def os_item_key(os_: int, item_: int) -> str:
+    return f"{os_}-{item_}"
 
-def _duplicado(ws, controle: str) -> bool:
+def controle_key(os_: int, item_: int, mov: str) -> str:
+    # Controle: OS-Item&Entrada ou OS-Item&Saida (sem acento)
+    mov_label = "Entrada" if mov == "Entrada" else "Saida"
+    return f"{os_item_key(os_, item_)}&{mov_label}"
+
+def ja_existe_controle(ws, chave: str) -> bool:
     try:
         col = ws.col_values(IDX_CONTROLE)
-        return controle in set([c for c in col[1:] if c])
+        return chave in set([c for c in col[1:] if c])
     except Exception:
         # em caso de erro de leitura, não travar; considerar não-duplicado
         return False
 
-def _salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
+def salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
     try:
         client, sa_email = _gspread_client()
         ws = _open_or_prepare_ws(client)
@@ -138,39 +142,40 @@ def _salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
         data = now.strftime("%d/%m/%Y")
         hora = now.strftime("%H:%M:%S")
 
-        controle = _controle_key(registro["OS"], registro["Item"], registro["Movimento"])
-        if _duplicado(ws, controle):
-            return False, f"Duplicado: **{controle}** já existe na coluna Controle."
+        os_i  = registro["OS"]
+        item_ = registro["Item"]
+        mov   = registro["Movimento"]
+
+        chave_os_item = os_item_key(os_i, item_)
+        chave_ctrl    = controle_key(os_i, item_, mov)
+
+        if ja_existe_controle(ws, chave_ctrl):
+            return False, f"⚠️ Duplicidade: **{chave_ctrl}** já existe na coluna *Controle*."
 
         linha = [
-            registro["OS"],               # OS
-            registro["Item"],             # ITEM
-            registro["Quantidade"],       # QUANTIDADE
-            data,                         # DATA
-            hora,                         # HORA
-            USUARIO_LOGADO,               # OPERADOR
-            registro["Máquina"],          # MAQUINA
-            registro["Movimento"],        # ENTRADA/SAIDA
-            "",                           # Verificação (deixe p/ fórmulas/regras)
-            WORKSHEET_NAME,               # Planilha
-            controle,                     # Controle
+            os_i,                       # OS
+            item_,                      # ITEM
+            registro["Quantidade"],     # QUANTIDADE
+            data,                       # DATA
+            hora,                       # HORA
+            USUARIO_LOGADO,             # OPERADOR
+            registro["Máquina"],        # MAQUINA
+            mov,                        # ENTRADA/SAIDA
+            chave_os_item,              # OS- Item
+            WORKSHEET_NAME,             # Planilha
+            chave_ctrl,                 # Controle
         ]
         ws.append_row(linha, value_input_option="USER_ENTERED")
         return True, None
     except APIError as e:
-        # Erros de permissão costumam aparecer aqui
         _show_error(
-            "Falha de acesso ao Google Sheets (verifique se compartilhou a planilha com o Service Account)",
+            "Falha de acesso ao Google Sheets (verifique API ativa e compartilhamento com o Service Account)",
             e,
-            {"client_email (SA)": sa_email, "spreadsheet_id": SPREADSHEET_ID, "worksheet": WORKSHEET_NAME}
+            {"spreadsheet_id": SPREADSHEET_ID, "worksheet": WORKSHEET_NAME}
         )
         return False, str(e)
     except Exception as e:
-        _show_error(
-            "Erro ao salvar na planilha",
-            e,
-            {"client_email (SA)": locals().get("sa_email", "desconhecido"), "spreadsheet_id": SPREADSHEET_ID, "worksheet": WORKSHEET_NAME}
-        )
+        _show_error("Erro ao salvar na planilha", e, {"spreadsheet_id": SPREADSHEET_ID, "worksheet": WORKSHEET_NAME})
         return False, str(e)
 
 # ========= Abas =========
@@ -189,12 +194,12 @@ def campos_validos(os_, maq, qtd, mov):
 with tabs[0]:
     with st.container(border=True):
         st.subheader("💎 Entrada/Saída OS")
-        #st.caption("Preencha os dados e clique em **Salvar**. Duplicidade checada pela coluna **Controle** (OS&ITEM%entrada|saida).")
+        st.caption("Preencha e **Salvar**. Duplicidade checada em **Controle** (OS-Item&Entrada|Saida).")
 
         # Linha 1
         c1, c2, c3 = st.columns(3)
         with c1:
-            os_  = st.number_input("OS", min_value=0, step=1, format="%d", key="os")
+            os_  = st.number_input("🔑 OS", min_value=0, step=1, format="%d", key="os")
         with c2:
             item = st.number_input("Item", min_value=0, step=1, format="%d", key="item")
         with c3:
@@ -205,7 +210,6 @@ with tabs[0]:
         with qcol:
             qtd  = st.number_input("Quantidade", min_value=1, step=1, format="%d", key="qtd")
         with mcol:
-            # Radio sem seleção inicial (fallback para versões antigas)
             try:
                 mov = st.radio("Movimento", ["Entrada", "Saída"], index=None, horizontal=True, key="mov")
             except TypeError:
@@ -237,19 +241,22 @@ with tabs[0]:
                     "Movimento": mov,
                 }
 
-                ok, err = _salvar_no_sheets(registro)
+                ok, err = salvar_no_sheets(registro)
                 if ok:
-                    st.success("✅ Registro salvo")
-                    #st.markdown('<div class="box">', unsafe_allow_html=True)
-                    #st.json({
-                    #    **registro,
-                    #    "DATA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y"),
-                    #    "HORA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%H:%M:%S"),
-                    #    "OPERADOR": USUARIO_LOGADO,
-                    #    "Controle": f"{registro['OS']}&{registro['Item']}%{'entrada' if registro['Movimento']=='Entrada' else 'saida'}",
-                    #})
-                    #st.markdown('</div>', unsafe_allow_html=True)
-                    #st.markdown(f'<div class="badge">Movimento: <b>{mov}</b></div>', unsafe_allow_html=True)
+                    chave_ctrl = controle_key(registro["OS"], registro["Item"], registro["Movimento"])
+                    st.success(f"✅ Registro salvo. Controle: **{chave_ctrl}**")
+                    st.markdown('<div class="box">', unsafe_allow_html=True)
+                    st.json({
+                        **registro,
+                        "DATA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y"),
+                        "HORA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%H:%M:%S"),
+                        "OPERADOR": USUARIO_LOGADO,
+                        "OS- Item": os_item_key(registro["OS"], registro["Item"]),
+                        "Controle": chave_ctrl,
+                    })
+                    st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.error(err)
 
 # ========= Abas extras (somente admin) =========
 if ROLE == "admin" and len(tabs) > 1:
