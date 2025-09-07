@@ -166,7 +166,7 @@ def salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
 
         # Duplicidade: não pode repetir o mesmo Controle
         if ja_existe_controle(ws, chave_ctrl):
-            return False, f"⚠️ Duplicidade: **{chave_ctrl}** já existe na coluna *Controle*."
+            return False, f"⚠️ Duplicidade:"
 
         linha = [
             os_i,                       # OS
