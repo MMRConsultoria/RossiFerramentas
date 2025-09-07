@@ -122,7 +122,7 @@ with tabs[0]:
             if not (maq and maq.strip()):
                 erros.append("Informe a **Máquina**.")
             if mov == "Selecione...":
-                erros.append("Selecione **Entrada** ou **Saída**.")
+                erros.append("**Entrada** ou **Saída**.")
 
             if erros:
                 for e in erros:
