@@ -57,9 +57,11 @@ if not st.session_state.get("acesso_liberado"):
 codigo_empresa = st.session_state.get("empresa")
 
 # ✅ Logos por código
+# ✅ Logos por código
 LOGOS_CLIENTES = {
-   
     "3377": "https://raw.githubusercontent.com/MMRConsultoria/MMRBackup/main/rossi_ferramentas_logo.png"
+}
+
     
 
 # ✅ Logo na sidebar
