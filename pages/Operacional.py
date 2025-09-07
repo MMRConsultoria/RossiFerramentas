@@ -33,27 +33,49 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ===================== JS: Enter funciona como Tab =====================
+# ===================== JS: Enter = Tab (e Shift+Enter = voltar) =====================
 st.markdown("""
 <script>
-document.addEventListener('keydown', function(e) {
-  if (e.key === "Enter") {
+(function() {
+  function nextFocusable(forward=true) {
+    // pega inputs navegáveis na página (ordem do DOM)
+    const sel = 'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])';
+    const inputs = Array.from(document.querySelectorAll(sel))
+      .filter(el => el.offsetParent !== null); // visíveis
+
     const active = document.activeElement;
-    // evita capturar Enter em botões de submit
-    if (active && (active.type === "submit" || active.tagName === "BUTTON")) return;
-
-    // pega inputs navegáveis (inclui radios/selects/text)
-    const inputs = Array.from(document.querySelectorAll('input, select, textarea'))
-      .filter(el => !el.disabled && el.tabIndex >= 0);
-
     const idx = inputs.indexOf(active);
-    if (idx > -1) {
-      e.preventDefault(); // evita submit do form
-      const next = inputs[idx + 1] || inputs[0];
-      if (next) next.focus();
-    }
+    if (idx === -1) return null;
+
+    let nextIdx = forward ? idx + 1 : idx - 1;
+    if (nextIdx >= inputs.length) nextIdx = 0;
+    if (nextIdx < 0) nextIdx = inputs.length - 1;
+    return inputs[nextIdx] || null;
   }
-});
+
+  // Usa CAPTURA para interceptar antes do submit do Streamlit
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+
+    const el = document.activeElement;
+    if (!el) return;
+
+    // Não atrapalhar botões (inclusive submit) e textareas com Shift+Enter (quebra de linha)
+    if (el.tagName === 'BUTTON' || el.type === 'submit') return;
+    if (el.tagName === 'TEXTAREA' && e.shiftKey) return;
+
+    // Evita que o Enter submeta o form
+    e.preventDefault();
+    e.stopPropagation();
+
+    const target = nextFocusable(!e.shiftKey); // Shift+Enter volta
+    if (target) {
+      // Para radios: se focar numa opção, apenas foca; setinha navega entre opções
+      target.focus();
+      try { target.select && target.select(); } catch(_) {}
+    }
+  }, true); // <<< capture = true
+})();
 </script>
 """, unsafe_allow_html=True)
 
@@ -98,8 +120,6 @@ with tabs[0]:
 
     # Ações pós-submit
     if limpar:
-        # zera estados simples (não há states fixos com esses nomes, mas garantimos limpeza visual)
-        st.session_state.pop("form_os", None)
         st.rerun()
 
     if salvar:
