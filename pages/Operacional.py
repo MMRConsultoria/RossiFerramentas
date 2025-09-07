@@ -89,15 +89,16 @@ with tabs[0]:
 
             # Linha 2: Movimento + Quantidade (lado a lado)
             mcol, qcol = st.columns([1.2, 0.8])
+            
+            with qcol:
+                qtd  = st.number_input("Quantidade", min_value=1, step=1, format="%d", key="qtd")
+                
             with mcol:
                 mov = st.radio(
                     "Movimento",
                     options=["Selecione...", "Entrada", "Saída"],
                     index=0, horizontal=True, key="mov"
                 )
-            with qcol:
-                qtd  = st.number_input("Quantidade", min_value=1, step=1, format="%d", key="qtd")
-
             col_a, col_b = st.columns([1,1])
             salvar = col_a.form_submit_button("💾 Salvar", use_container_width=True)
             limpar = col_b.form_submit_button("🧹 Limpar", use_container_width=True)
