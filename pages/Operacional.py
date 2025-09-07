@@ -1,3 +1,4 @@
+# pages/Operacional.py
 import streamlit as st
 
 st.set_page_config(page_title="Painel OS", page_icon="🧰", layout="wide")
@@ -19,10 +20,9 @@ st.markdown("""
 .stTabs [aria-selected="true"]{ background:#2563eb; color:#fff!important; border-color:#2563eb; }
 .stTabs [role="tab"]:hover{ background:#e0e7ff; color:#1e3a8a; }
 
-/* Remover qualquer bloco vazio logo abaixo do tablist (evita "pílula" fantasma) */
+/* Remover qualquer bloco vazio logo abaixo das abas */
 .stTabs [role="tablist"] + div:empty { display:none !important; }
 
-/* Ajustes gerais */
 .box{ padding:12px; border:1px dashed #d1d5db; border-radius:12px; background:#f9fafb; }
 .badge{
   display:inline-flex; gap:8px; align-items:center; background:#eff6ff; color:#1d4ed8;
@@ -31,7 +31,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ========= JS: Enter = Tab (Shift+Enter = voltar) =========
+# ========= JS: Enter = Tab (Shift+Enter volta) =========
 st.markdown("""
 <script>
 (function() {
@@ -78,6 +78,7 @@ with tabs[0]:
         st.caption("Preencha os dados da OS e selecione o tipo do movimento.")
 
         with st.form("form_os"):
+            # Linha 1: OS | Item | Máquina
             c1, c2, c3 = st.columns(3)
             with c1:
                 os_  = st.number_input("🔑 OS", min_value=0, step=1, format="%d", key="os")
@@ -86,13 +87,16 @@ with tabs[0]:
             with c3:
                 maq  = st.text_input("Máquina", placeholder="Ex.: 6666666", key="maq")
 
-            qtd  = st.number_input("Quantidade", min_value=1, step=1, format="%d", key="qtd")
-
-            mov = st.radio(
-                "Movimento",
-                options=["Selecione...", "Entrada", "Saída"],
-                index=0, horizontal=True, key="mov"
-            )
+            # Linha 2: Movimento + Quantidade (lado a lado)
+            mcol, qcol = st.columns([1.2, 0.8])
+            with mcol:
+                mov = st.radio(
+                    "Movimento",
+                    options=["Selecione...", "Entrada", "Saída"],
+                    index=0, horizontal=True, key="mov"
+                )
+            with qcol:
+                qtd  = st.number_input("Quantidade", min_value=1, step=1, format="%d", key="qtd")
 
             col_a, col_b = st.columns([1,1])
             salvar = col_a.form_submit_button("💾 Salvar", use_container_width=True)
