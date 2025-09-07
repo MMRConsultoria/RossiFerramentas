@@ -92,16 +92,24 @@ with tabs[0]:
             with qcol:
                 qtd  = st.number_input("Quantidade", min_value=1, step=1, format="%d", key="qtd")
             with mcol:
+                # Placeholder "Selecione..." para ficar sem marcação inicial e obrigar escolha
                 mov = st.radio(
                     "Movimento",
-                    options=["Entrada", "Saída"],
-                    index=0, horizontal=True, key="mov"
+                    options=["Selecione...", "Entrada", "Saída"],
+                    index=0,
+                    horizontal=True,
+                    key="mov"
                 )
 
             col_a, col_b = st.columns([1,1])
-            salvar = col_a.form_submit_button("💾 Salvar", use_container_width=True)
+            salvar = col_a.form_submit_button(
+                "💾 Salvar",
+                use_container_width=True,
+                disabled=(mov == "Selecione..." or os_ == 0 or not (maq and maq.strip()))
+            )
             limpar = col_b.form_submit_button("🧹 Limpar", use_container_width=True)
 
+        # --- ações fora do form ---
         if limpar:
             for k in ("os","item","maq","qtd","mov"):
                 st.session_state.pop(k, None)
@@ -109,26 +117,29 @@ with tabs[0]:
 
         if salvar:
             erros = []
-            if os_ == 0: erros.append("Informe a **OS** (valor maior que zero).")
-            if not st.session_state.get("maq") or not st.session_state["maq"].strip():
+            if os_ == 0:
+                erros.append("Informe a **OS** (valor maior que zero).")
+            if not (maq and maq.strip()):
                 erros.append("Informe a **Máquina**.")
-            if st.session_state.get("mov") == "Selecione...":
+            if mov == "Selecione...":
                 erros.append("Selecione **Entrada** ou **Saída**.")
+
             if erros:
-                for e in erros: st.error(e)
+                for e in erros:
+                    st.error(e)
             else:
                 registro = {
-                    "OS": int(st.session_state["os"]),
-                    "Item": int(st.session_state["item"]),
-                    "Quantidade": int(st.session_state["qtd"]),
-                    "Máquina": st.session_state["maq"].strip(),
-                    "Movimento": st.session_state["mov"],
+                    "OS": int(os_),
+                    "Item": int(item),
+                    "Quantidade": int(qtd),
+                    "Máquina": maq.strip(),
+                    "Movimento": mov,
                 }
                 st.success("✅ Registro salvo localmente.")
                 st.markdown('<div class="box">', unsafe_allow_html=True)
                 st.json(registro)
                 st.markdown('</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="badge">Movimento: <b>{st.session_state["mov"]}</b></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="badge">Movimento: <b>{mov}</b></div>', unsafe_allow_html=True)
 
 # ========= Abas extras (somente admin) =========
 if ROLE == "admin" and len(tabs) > 1:
