@@ -122,10 +122,9 @@ def _open_or_prepare_ws(client):
 def os_item_key(os_: int, item_: int) -> str:
     return f"{os_}-{item_}"
 
-def controle_key(os_: int, item_: int, mov: str) -> str:
-    # Controle: OS-Item&Entrada ou OS-Item&Saida (sem acento)
-    mov_label = "Entrada" if mov == "Entrada" else "Saida"
-    return f"{os_item_key(os_, item_)}&{mov_label}"
+def controle_key(os_: int, item_: int, mov: str, proc: str) -> str:
+    """Controle = OS-Item&Entrada|Saída&Afiação|Erosão (com acentos)."""
+    return f"{os_item_key(os_, item_)}&{mov}&{proc}"
 
 # ---- Consultas de existência na coluna Controle ----
 def col_controle(ws) -> list[str]:
@@ -138,9 +137,9 @@ def col_controle(ws) -> list[str]:
 def ja_existe_controle(ws, chave: str) -> bool:
     return chave in set(col_controle(ws))
 
-def existe_entrada_para_os_item(ws, os_: int, item_: int) -> bool:
-    """Verifica se já existe 'OS-Item&Entrada' para permitir Saída."""
-    chave_entrada = f"{os_item_key(os_, item_)}&Entrada"
+def existe_entrada_para_os_item_proc(ws, os_: int, item_: int, proc: str) -> bool:
+    """Permite Saída apenas se existir 'OS-Item&Entrada&<proc>'."""
+    chave_entrada = f"{os_item_key(os_, item_)}&Entrada&{proc}"
     return chave_entrada in set(col_controle(ws))
 
 # ========= Salvamento com as regras =========
@@ -155,15 +154,15 @@ def salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
 
         os_i   = registro["OS"]
         item_  = registro["Item"]
-        mov    = registro["Movimento"]
-        proc   = registro["Processo"]  # Afiação/Erosão
+        mov    = registro["Movimento"]       # "Entrada" | "Saída"
+        proc   = registro["Processo"]        # "Afiação" | "Erosão"
 
         chave_os_item = os_item_key(os_i, item_)
-        chave_ctrl    = controle_key(os_i, item_, mov)
+        chave_ctrl    = controle_key(os_i, item_, mov, proc)
 
-        # Regra: NÃO PODE SAÍDA sem ENTRADA antes
-        if mov == "Saída" and not existe_entrada_para_os_item(ws, os_i, item_):
-            return False, f"❌ Não é permitido registrar **Saída** sem existir uma **Entrada** prévia para **{chave_os_item}**. Registre a Entrada primeiro."
+        # Regra: NÃO PODE SAÍDA sem ENTRADA (mesmo OS-Item e mesmo Processo)
+        if mov == "Saída" and not existe_entrada_para_os_item_proc(ws, os_i, item_, proc):
+            return False, f"❌ Não é permitido registrar **Saída** sem existir **Entrada** prévia para **{chave_os_item} ({proc})**."
 
         # Duplicidade: não pode repetir o mesmo Controle
         if ja_existe_controle(ws, chave_ctrl):
@@ -180,8 +179,8 @@ def salvar_no_sheets(registro: dict) -> tuple[bool, str | None]:
             registro["Máquina"],        # MAQUINA
             mov,                        # ENTRADA/SAIDA
             chave_os_item,              # OS- Item
-            proc,                       # Afiação/Erosão (mesmo valor do processo)
-            chave_ctrl,                 # Controle
+            proc,                       # Afiação/Erosão (mesmo valor)
+            chave_ctrl,                 # Controle (OS-Item&Entrada|Saída&Afiação|Erosão)
         ]
         ws.append_row(linha, value_input_option="USER_ENTERED")
         return True, None
@@ -213,7 +212,7 @@ def campos_validos(os_, maq, qtd, mov, proc):
 with tabs[0]:
     with st.container(border=True):
         st.subheader("Entrada/Saída OS")
-        st.caption("Regra: **não pode Saída sem Entrada** do mesmo **OS-Item**. Duplicidade em **Controle** (OS-Item&Entrada|Saida).")
+        st.caption("Controle = **OS-Item&Entrada|Saída&Afiação|Erosão**. Regra: **não pode Saída sem Entrada** do mesmo **OS-Item/Processo**.")
 
         # Linha 1
         c1, c2, c3 = st.columns(3)
