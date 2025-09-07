@@ -95,15 +95,15 @@ def montar_registro():
         "Movimento": st.session_state["mov"],
     }
 
-def processar_salvar(auto=False):
-    registro = montar_registro()
-    st.session_state["last_saved_sig"] = assinatura_atual()
-    msg = "✅ Registro **auto-salvo**." if auto else "✅ Registro salvo."
-    st.success(msg)
-    st.markdown('<div class="box">', unsafe_allow_html=True)
-    st.json(registro)
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="badge">Movimento: <b>{registro["Movimento"]}</b></div>', unsafe_allow_html=True)
+#def processar_salvar(auto=False):
+#    registro = montar_registro()
+#    st.session_state["last_saved_sig"] = assinatura_atual()
+#    msg = "✅ Registro **auto-salvo**." if auto else "✅ Registro salvo."
+#    st.success(msg)
+#    st.markdown('<div class="box">', unsafe_allow_html=True)
+#    st.json(registro)
+#    st.markdown('</div>', unsafe_allow_html=True)
+#    st.markdown(f'<div class="badge">Movimento: <b>{registro["Movimento"]}</b></div>', unsafe_allow_html=True)
 
 # ========= Aba 1: Entrada/Saída OS =========
 with tabs[0]:
