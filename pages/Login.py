@@ -116,26 +116,26 @@ if st.session_state.get("acesso_liberado"):
 
 # 🧾 Tela de login
 st.title("🔐 Acesso Restrito")
-st.markdown("Informe o código da empresa, e-mail e senha.")
+st.markdown("Informe o código da empresa, Usuario e senha.")
 
 codigo = st.text_input("Código da Empresa:")
-email = st.text_input("E-mail:")
+Usuario = st.text_input("Usuario:")
 senha = st.text_input("Senha:", type="password")
 
 # ✅ Botão de login
 if st.button("Entrar"):
     usuario_encontrado = next(
-        (u for u in USUARIOS if u["codigo"] == codigo and u["email"] == email and u["senha"] == senha),
+        (u for u in USUARIOS if u["codigo"] == codigo and u["Usuario"] == Usuario and u["senha"] == senha),
         None
     )
 
     if usuario_encontrado:
         st.session_state["acesso_liberado"] = True
         st.session_state["empresa"] = codigo
-        st.session_state["usuario_logado"] = email
-        registrar_acesso(email)
+        st.session_state["usuario_logado"] = Usuario
+        registrar_acesso(Usuario)
         st.switch_page("Home.py")
 
     else:
-        st.error("❌ Código, e-mail ou senha incorretos.")
+        st.error("❌ Código, Usuario ou senha incorretos.")
 
