@@ -239,17 +239,17 @@ with tabs[0]:
 
                 ok, err = _salvar_no_sheets(registro)
                 if ok:
-                    st.success("✅ Registro salvo na aba **EntradaSaidaOS**.")
-                    st.markdown('<div class="box">', unsafe_allow_html=True)
-                    st.json({
-                        **registro,
-                        "DATA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y"),
-                        "HORA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%H:%M:%S"),
-                        "OPERADOR": USUARIO_LOGADO,
-                        "Controle": f"{registro['OS']}&{registro['Item']}%{'entrada' if registro['Movimento']=='Entrada' else 'saida'}",
-                    })
-                    st.markdown('</div>', unsafe_allow_html=True)
-                    st.markdown(f'<div class="badge">Movimento: <b>{mov}</b></div>', unsafe_allow_html=True)
+                    st.success("✅ Registro salvo")
+                    #st.markdown('<div class="box">', unsafe_allow_html=True)
+                    #st.json({
+                    #    **registro,
+                    #    "DATA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y"),
+                    #    "HORA": datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%H:%M:%S"),
+                    #    "OPERADOR": USUARIO_LOGADO,
+                    #    "Controle": f"{registro['OS']}&{registro['Item']}%{'entrada' if registro['Movimento']=='Entrada' else 'saida'}",
+                    #})
+                    #st.markdown('</div>', unsafe_allow_html=True)
+                    #st.markdown(f'<div class="badge">Movimento: <b>{mov}</b></div>', unsafe_allow_html=True)
 
 # ========= Abas extras (somente admin) =========
 if ROLE == "admin" and len(tabs) > 1:
