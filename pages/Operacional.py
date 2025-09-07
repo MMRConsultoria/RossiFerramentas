@@ -188,7 +188,7 @@ def campos_validos(os_, maq, qtd, mov):
 # ========= Aba 1 =========
 with tabs[0]:
     with st.container(border=True):
-        st.subheader("💼 Entrada/Saída OS")
+        st.subheader("💎 Entrada/Saída OS")
         #st.caption("Preencha os dados e clique em **Salvar**. Duplicidade checada pela coluna **Controle** (OS&ITEM%entrada|saida).")
 
         # Linha 1
