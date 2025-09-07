@@ -3,7 +3,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Painel OS", page_icon="🧰", layout="wide")
 
-# ====== CSS (abas estilo pill + cartão) ======
+# ===================== CSS (abas estilo pill + cartão) =====================
 st.markdown("""
 <style>
 .stTabs [role="tablist"]{ gap:10px; border-bottom:1px solid #e5e7eb; }
@@ -32,28 +32,32 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
+# ===================== JS: Enter funciona como Tab =====================
 st.markdown("""
 <script>
 document.addEventListener('keydown', function(e) {
   if (e.key === "Enter") {
     const active = document.activeElement;
-    // pega todos os inputs do formulário
-    const inputs = Array.from(document.querySelectorAll(
-      'input, select, textarea'
-    )).filter(el => el.tabIndex >= 0);
+    // evita capturar Enter em botões de submit
+    if (active && (active.type === "submit" || active.tagName === "BUTTON")) return;
+
+    // pega inputs navegáveis (inclui radios/selects/text)
+    const inputs = Array.from(document.querySelectorAll('input, select, textarea'))
+      .filter(el => !el.disabled && el.tabIndex >= 0);
 
     const idx = inputs.indexOf(active);
     if (idx > -1) {
-      e.preventDefault(); // evita submit
-      let next = inputs[idx + 1] || inputs[0];
-      next.focus();
+      e.preventDefault(); // evita submit do form
+      const next = inputs[idx + 1] || inputs[0];
+      if (next) next.focus();
     }
   }
 });
 </script>
 """, unsafe_allow_html=True)
 
-# ====== Abas ======
+# ===================== Abas =====================
 tabs = st.tabs([
     "📋 Entrada/Saída OS",
     "📊 Relatório 1 (em desenvolvimento)",
@@ -61,11 +65,11 @@ tabs = st.tabs([
     "⚙️ Configurações (em desenvolvimento)"
 ])
 
-# ====== Aba 1 ======
+# ===================== Aba 1: Formulário OS =====================
 with tabs[0]:
     st.markdown('<div class="wrapper"><div class="card">', unsafe_allow_html=True)
     st.markdown('<div class="h2">🧰 Entrada/Saída OS</div>', unsafe_allow_html=True)
-    st.markdown('<div class="caption">Preencha os dados da OS.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="caption">Preencha os dados da OS e selecione o tipo do movimento.</div>', unsafe_allow_html=True)
 
     with st.form("form_os"):
         # Linha 1: OS | Item | Máquina
@@ -94,8 +98,8 @@ with tabs[0]:
 
     # Ações pós-submit
     if limpar:
-        for k in ("OS","Item","Quantidade","Máquina","Movimento"):
-            if k in st.session_state: del st.session_state[k]
+        # zera estados simples (não há states fixos com esses nomes, mas garantimos limpeza visual)
+        st.session_state.pop("form_os", None)
         st.rerun()
 
     if salvar:
@@ -108,7 +112,8 @@ with tabs[0]:
             erros.append("Selecione **Entrada** ou **Saída**.")
 
         if erros:
-            for e in erros: st.error(e)
+            for e in erros:
+                st.error(e)
         else:
             registro = {
                 "OS": int(os_),
@@ -117,7 +122,7 @@ with tabs[0]:
                 "Máquina": maq.strip(),
                 "Movimento": mov,
             }
-            st.success("✅ Registro salvo localmente (UI pronta — Sheets vem depois).")
+            st.success("✅ Registro salvo localmente (UI pronta — integração com Google Sheets vem depois).")
             st.markdown('<div class="box">', unsafe_allow_html=True)
             st.json(registro)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -125,7 +130,7 @@ with tabs[0]:
 
     st.markdown('</div></div>', unsafe_allow_html=True)
 
-# ====== Abas placeholder ======
+# ===================== Abas placeholder =====================
 with tabs[1]:
     st.info("🚧 Em desenvolvimento...")
 
