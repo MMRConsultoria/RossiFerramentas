@@ -94,7 +94,7 @@ with tabs[0]:
             with mcol:
                 mov = st.radio(
                     "Movimento",
-                    options=["Selecione...", "Entrada", "Saída"],
+                    options=["Entrada", "Saída"],
                     index=0, horizontal=True, key="mov"
                 )
 
