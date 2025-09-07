@@ -85,27 +85,27 @@ USUARIOS = [
 # ========================
 # 🔐 Autenticação Google Sheets
 # ========================
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-credentials_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT_ACESSOS"])
-credentials = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
-gc = gspread.authorize(credentials)
+#scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+#credentials_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT_ACESSOS"])
+#credentials = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, scope)
+#gc = gspread.authorize(credentials)
 
-from datetime import datetime
-import pytz
+#from datetime import datetime
+#import pytz
 
-def registrar_acesso(nome_usuario):
-    try:
-        fuso_brasilia = pytz.timezone("America/Sao_Paulo")
-        agora = datetime.now(fuso_brasilia)
-        data = agora.strftime("%d/%m/%Y")
-        hora = agora.strftime("%H:%M:%S")
+#def registrar_acesso(nome_usuario):
+ #   try:
+ #       fuso_brasilia = pytz.timezone("America/Sao_Paulo")
+ #       agora = datetime.now(fuso_brasilia)
+ #       data = agora.strftime("%d/%m/%Y")
+ #       hora = agora.strftime("%H:%M:%S")
 
-        planilha = gc.open_by_key("1SZ5R6hcBE6o_qWs0_wx6IGKfIGltxpb9RWiGyF4L5uE")
-        aba = planilha.sheet1
-        nova_linha = [nome_usuario, data, hora]
-        aba.append_row(nova_linha)
-    except Exception as e:
-        st.error(f"Erro ao registrar acesso: {e}")
+ #       planilha = gc.open_by_key("1SZ5R6hcBE6o_qWs0_wx6IGKfIGltxpb9RWiGyF4L5uE")
+ #       aba = planilha.sheet1
+ #       nova_linha = [nome_usuario, data, hora]
+ #       aba.append_row(nova_linha)
+ #   except Exception as e:
+ #       st.error(f"Erro ao registrar acesso: {e}")
 
 # ✅ Redireciona se já estiver logado
 if st.session_state.get("acesso_liberado"):
