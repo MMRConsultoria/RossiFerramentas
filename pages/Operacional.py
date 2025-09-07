@@ -9,7 +9,7 @@ if not st.session_state.get("acesso_liberado"):
 
 ROLE = st.session_state.get("role", "basic")
 
-# ========= CSS: abas estilo "pill" + limpeza de elementos vazios =========
+# ========= CSS: abas estilo "pill" + limpeza =========
 st.markdown("""
 <style>
 .stTabs [role="tablist"]{ gap:10px; border-bottom:1px solid #e5e7eb; }
@@ -20,7 +20,7 @@ st.markdown("""
 .stTabs [aria-selected="true"]{ background:#2563eb; color:#fff!important; border-color:#2563eb; }
 .stTabs [role="tab"]:hover{ background:#e0e7ff; color:#1e3a8a; }
 
-/* Remover qualquer bloco vazio logo abaixo das abas */
+/* Evita bloco vazio logo abaixo das abas */
 .stTabs [role="tablist"] + div:empty { display:none !important; }
 
 .box{ padding:12px; border:1px dashed #d1d5db; border-radius:12px; background:#f9fafb; }
@@ -87,31 +87,31 @@ with tabs[0]:
             with c3:
                 maq  = st.text_input("Máquina", placeholder="Ex.: 6666666", key="maq")
 
-            # Linha 2: Quantidade (à esquerda) + Movimento (à direita)
+            # Linha 2: Quantidade (esq) + Movimento (dir, sem seleção inicial)
             qcol, mcol = st.columns([0.8, 1.2])
             with qcol:
                 qtd  = st.number_input("Quantidade", min_value=1, step=1, format="%d", key="qtd")
             with mcol:
-                # Placeholder "Selecione..." para ficar sem marcação inicial e obrigar escolha
                 mov = st.radio(
                     "Movimento",
-                    options=["Selecione...", "Entrada", "Saída"],
-                    index=0,
+                    options=["Entrada", "Saída"],
+                    index=None,                 # <- nenhuma opção marcada
                     horizontal=True,
-                    key="mov"
+                    key="mov",
                 )
 
-            col_a, col_b = st.columns([1,1])
+            # Botões
+            col_a, col_b = st.columns([1, 1])
             salvar = col_a.form_submit_button(
                 "💾 Salvar",
                 use_container_width=True,
-                disabled=(mov == "Selecione..." or os_ == 0 or not (maq and maq.strip()))
+                disabled=(mov is None or os_ == 0 or not (maq and maq.strip()))
             )
             limpar = col_b.form_submit_button("🧹 Limpar", use_container_width=True)
 
         # --- ações fora do form ---
         if limpar:
-            for k in ("os","item","maq","qtd","mov"):
+            for k in ("os", "item", "maq", "qtd", "mov"):
                 st.session_state.pop(k, None)
             st.rerun()
 
@@ -121,8 +121,8 @@ with tabs[0]:
                 erros.append("Informe a **OS** (valor maior que zero).")
             if not (maq and maq.strip()):
                 erros.append("Informe a **Máquina**.")
-            if mov == "Selecione...":
-                erros.append("**Entrada** ou **Saída**.")
+            if mov is None:
+                erros.append("Selecione **Entrada** ou **Saída**.")
 
             if erros:
                 for e in erros:
