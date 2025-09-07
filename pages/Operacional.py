@@ -8,7 +8,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import traceback
 
-st.set_page_config(page_title="Painel OS", page_icon=, layout="wide")
+st.set_page_config(page_title="Painel OS", page_icon="💎", layout="wide")
 
 # ========= Guarda de sessão =========
 if not st.session_state.get("acesso_liberado"):
@@ -213,7 +213,7 @@ with tabs[0]:
         # Linha 1
         c1, c2, c3 = st.columns(3)
         with c1:
-            os_  = st.number_input("OS", min_value=0, step=1, format="%d", key="os")
+            os_  = st.number_input("🔑 OS", min_value=0, step=1, format="%d", key="os")
         with c2:
             item = st.number_input("Item", min_value=0, step=1, format="%d", key="item")
         with c3:
