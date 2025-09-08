@@ -15,7 +15,7 @@ if st.session_state.get("role", "basic") != "admin":
     st.stop()
 
 st.set_page_config(page_title="Relatório | OS-Item", page_icon="⏱️", layout="wide")
-st.title("⏱️ Relatório — Tempo por OS-Item")
+#st.title("⏱️ Relatório — Tempo por OS-Item")
 
 # ===== Planilha =====
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1t82JJfHgiVeANV6fik5ShN6r30UMeDWUqDvlUK0Ok38/edit?gid=0#gid=0"
