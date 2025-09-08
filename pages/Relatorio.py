@@ -16,6 +16,20 @@ if st.session_state.get("role", "basic") != "admin":
 st.set_page_config(page_title="Relatórios", page_icon="📑", layout="wide")
 st.title("📑 Relatórios")
 
+# === CSS igual ao Operacional (abas estilo pill) ===
+st.markdown("""
+<style>
+.stTabs [role="tablist"]{ gap:10px; border-bottom:1px solid #e5e7eb; }
+.stTabs [role="tab"]{
+  background:#f3f4f6; padding:8px 20px; border-radius:8px 8px 0 0;
+  font-weight:600; color:#374151; border:1px solid transparent;
+}
+.stTabs [aria-selected="true"]{ background:#2563eb; color:#fff!important; border-color:#2563eb; }
+.stTabs [role="tab"]:hover{ background:#e0e7ff; color:#1e3a8a; }
+.stTabs [role="tablist"] + div:empty { display:none !important; }
+</style>
+""", unsafe_allow_html=True)
+
 # ---------- planilha ----------
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1t82JJfHgiVeANV6fik5ShN6r30UMeDWUqDvlUK0Ok38/edit?gid=0#gid=0"
 WORKSHEET_NAME  = "EntradaSaidaOS"
@@ -33,7 +47,7 @@ def _client():
 @st.cache_data(ttl=180)
 def load_df() -> pd.DataFrame:
     ws = _client().open_by_key(SPREADSHEET_ID).worksheet(WORKSHEET_NAME)
-    rows = ws.get_all_records()     # usa o cabeçalho da 1ª linha
+    rows = ws.get_all_records()
     if not rows: 
         return pd.DataFrame()
 
@@ -99,18 +113,18 @@ if os_sel: mask &= df["OS"].isin(os_sel)
 if maquina_sel: mask &= df["MAQUINA"].astype(str).isin(maquina_sel)
 df_f = df.loc[mask].copy()
 
-# ---------- pareamento Entrada -> Saída (por OS-Item; opcionalmente por Processo) ----------
+# ---------- pareamento Entrada -> Saída ----------
 pairs, entradas_sem_saida, saidas_sem_entrada = [], [], []
 key_cols = ["OS_Item"] + (["PROC"] if parear_por_processo else [])
 for _, g in df_f.groupby(key_cols, sort=False):
     g = g.sort_values("TS")
-    fila = []                        # fila de Entradas
+    fila = []
     for _, r in g.iterrows():
         if r["MOV"] == "Entrada":
             fila.append(r)
-        else:                        # Saída
+        else:
             if fila:
-                r_in = fila.pop(0)   # pareia na ordem (FIFO)
+                r_in = fila.pop(0)
                 dur = (r["TS"] - r_in["TS"]).total_seconds()
                 pairs.append({
                     "OS_Item": r["OS_Item"], "OS": r["OS"], "Item": r["ITEM"],
@@ -122,18 +136,18 @@ for _, g in df_f.groupby(key_cols, sort=False):
                     "OS_Item": r["OS_Item"], "OS": r["OS"], "Item": r["ITEM"],
                     "PROC": r["PROC"], "Saida_TS": r["TS"]
                 })
-    # tudo que sobrou na fila = Entradas sem Saída
     for r_in in fila:
         entradas_sem_saida.append({
             "OS_Item": r_in["OS_Item"], "OS": r_in["OS"], "Item": r_in["ITEM"],
             "PROC": r_in["PROC"], "Entrada_TS": r_in["TS"]
         })
 
+import pandas as pd
 df_pairs = pd.DataFrame(pairs)
 df_open  = pd.DataFrame(entradas_sem_saida)
 df_orph  = pd.DataFrame(saidas_sem_entrada)
 
-# agregado só por OS-Item (como você pediu)
+# agregado por OS-Item (opcionalmente por processo)
 if not df_pairs.empty:
     cols_group = ["OS_Item"] + (["PROC"] if parear_por_processo else [])
     tempo_os_item = (df_pairs
@@ -147,7 +161,7 @@ if not df_pairs.empty:
 else:
     tempo_os_item = pd.DataFrame(columns=["OS_Item","PROC","Ciclos","Segundos","Primeiro","Ultimo","HH:MM:SS"])
 
-# ---------- ABAS: Relatório | Gráficos ----------
+# ---------- ABAS: Relatório | Gráficos (agora com o mesmo estilo) ----------
 tab_rel, tab_graf = st.tabs(["📄 Relatório", "📈 Gráficos"])
 
 # ======== RELATÓRIO ========
@@ -181,7 +195,7 @@ with tab_rel:
                 file_name="entradas_sem_saida.csv",
                 mime="text/csv"
             )
-    else:  # Sem Entrada
+    else:
         if df_orph.empty:
             st.success("Nenhuma Saída órfã.")
         else:
@@ -200,20 +214,12 @@ with tab_graf:
     if tempo_os_item.empty:
         st.info("Sem dados pareados para o período/filtros selecionados.")
     else:
-        # top N
         n_top = st.slider("Mostrar Top N OS-Item por tempo total", 5, 50, 15)
         top_df = tempo_os_item.sort_values("Segundos", ascending=False).head(n_top).copy()
         top_df["Horas"] = top_df["Segundos"] / 3600.0
+        st.bar_chart(top_df.set_index("OS_Item")["Horas"], use_container_width=True, height=420)
 
-        # bar chart
-        st.bar_chart(
-            data=top_df.set_index("OS_Item")["Horas"],
-            use_container_width=True,
-            height=420
-        )
-
-        # série temporal por dia (soma de durações terminadas no dia)
-        st.caption("Série diária do tempo total (baseado no horário da **Saída**).")
+        st.caption("Série diária do tempo total (com base no horário da **Saída**).")
         serie = (df_pairs.assign(Dia=df_pairs["Saida_TS"].dt.date)
                         .groupby("Dia", as_index=False)["Dur_s"].sum())
         if not serie.empty:
