@@ -8,7 +8,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import traceback
 
-# st.set_page_config(page_title="Painel OS", page_icon="💎", layout="wide")
+# st.set_page_config(page_title="Painel OS", page_icon="", layout="wide")
 
 # ========= Guarda de sessão =========
 if not st.session_state.get("acesso_liberado"):
